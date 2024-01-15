@@ -34,6 +34,7 @@
         public function readDir($path){
             $fileNames = array_diff(scandir($this->getBasePath() . $path), array('..', '.'));
             $fileNamesWithoutExetensions = [];
+
             foreach($fileNames as $fileName){
                 $fileNamesWithoutExetensions [] = $this->removeExtension($fileName);
             }
@@ -93,6 +94,10 @@
             $fileName = $this->addExtension($fileNameWE);
             $path = $this->makePath("/app/Controllers/" . $fileName);
 
+            if(!file_exists($this->makePath("/app/Controllers"))){
+                mkdir($this->makePath("/app/Controllers"));
+            }
+
             $controllerFile = fopen($path, "w");
 
             $controllerFileTemplate = file_get_contents($this->makePath("/src/Templates/ControllerTemplate.temp"));
@@ -112,6 +117,58 @@
 
         }
 
+        public function addStaticFiles($pagePaths){
+
+            $listPath = $this->makePath("/src/Static/List.stc");
+
+            $listStream = fopen($listPath, "a+");
+
+            $listData = file_get_contents($listPath);
+
+            foreach($pagePaths as $path){
+                if(str_contains($listData, $path)){
+                    continue;
+                }else{
+                    $timem = filemtime($this->makePath("/app/Pages/$path.php"));
+                    fwrite($listStream, "$path $timem\n");
+                }
+            }
+
+            fclose($listStream);
+        }
+
+        public function writeToStaticPages($page, $data){
+            $path = $this->makePath("/src/Static/Pages/$page-static.php");
+
+            $pageStream = fopen($path, "w");
+            
+            fwrite($pageStream, $data);
+
+            fclose($pageStream);
+        }
+
+        public function analyseFolderStructure($path){
+
+            
+            
+            $folderContent = $this->readDirWithExt($path);
+
+            $phpFile = array();
+
+            foreach($folderContent as $fileName){
+                if(!str_contains($fileName, ".")){
+                    $phpFile = array_merge($phpFile, $this->analyseFolderStructure("$path/$fileName"));
+                }
+                else{
+                    array_push($phpFile, explode(".", $fileName)[0]);
+                }
+            }
+
+            return $phpFile;
+        }
+
     }
+
+
 
 ?>

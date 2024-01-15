@@ -32,7 +32,6 @@
                     while(!feof($handle)){
     
                         echo fread($handle, $chunkSize);
-    
                         ob_flush();
                         flush();
                     }
@@ -41,6 +40,7 @@
     
                 }
                 else{
+                    
                     echo readfile($filePath);
     
                     exit();

@@ -266,18 +266,18 @@
 
             $modelName = $this->currentModel;
 
-            if($returnArr){
+            // if($returnArr){
 
-                $model = new $modelName();
+            //     $model = new $modelName();
 
-                foreach($data[0] as $column => $value){
+            //     foreach($data[0] as $column => $value){
 
-                    $model->$column = $value;
+            //         $model->$column = $value;
 
-                }
+            //     }
 
-                return $model;
-            }
+            //     return $model;
+            // }
 
 
             foreach($data as $user){

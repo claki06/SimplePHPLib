@@ -39,12 +39,12 @@
                 return;
             }
 
-            if(preg_match("/\[\p{Any}\]/", $route)){   
+            if(preg_match("/\[\p{Any}+\]/", $route)){   
                             
                 for($i = 0; $i < count($routeParts); $i++){
 
 
-                    if(!preg_match("/\[\p{Any}]/", $routeParts[$i])){
+                    if(!preg_match("/\[\p{Any}+\]/", $routeParts[$i])){
 
                         if($uriParts[$i] == $routeParts[$i]){
                             continue;
@@ -69,7 +69,7 @@
 
                 $_SESSION["LATEST_GET_URI"] = $uri;
                 
-                $callable();
+                $callable($arguments);
 
                 exit();
             }
@@ -99,7 +99,7 @@
             $uri = $_SERVER["REQUEST_URI"];
 
             if($action == null && $route == $uri){
-                $callable();
+                $callable($_POST);
                 exit();
             }
 

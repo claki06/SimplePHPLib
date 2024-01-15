@@ -8,6 +8,8 @@
     class Linker{
 
         private $fileController;
+        private $static = false;
+        private $allFiles = array();
 
         public function __construct()
         {
@@ -15,11 +17,29 @@
 
         }
 
-        public function link($page, $data){
+        public function link($page, $data, $pageName){
     
             $componentsPath = $this->fileController->makePath("/app/Pages/components");
 
-            $page = $this->resolvePageConditions($page, $data);
+
+            if(str_contains($page, "+=STATIC=+")){
+
+                $page = str_replace("+=STATIC=+", "", $page);
+
+                $this->static = true;
+
+                if(!in_array($pageName, $this->allFiles)){
+                    array_push($this->allFiles, $pageName);
+                }
+
+            }
+
+            if(!$this->shouldCompile($pageName)){
+
+                $preCompiledPagePath = $this->fileController->makePath("/src/Static/Pages/$pageName-static.php");
+
+                return file_get_contents($preCompiledPagePath);
+            }
 
             if(file_exists($componentsPath)){
                 $page = $this->resolveComponents($page);
@@ -27,7 +47,60 @@
 
             $page = $this->resolvePageParams($page, $data);
 
+            $page = $this->resolvePageConditions($page, $data);
+
+            $this->ifIsStatic($pageName, $page);
+
             return $page;
+        }
+
+        private function shouldCompile($pageName){
+            
+            $compile = false;
+
+            $listPath = $this->fileController->makePath("/src/Static/List.stc");
+
+            if(!$this->static) return true;
+
+            if(!str_contains(file_get_contents($listPath), $pageName)){
+                return true;
+            };
+
+            $listStream = fopen($listPath, "r+");
+
+            $lastPos = 0;
+
+            while(!feof($listStream)){
+
+                $parts = explode(" ",fgets($listStream));
+
+                if($parts[0] == ""){
+                    break;
+                }
+
+                $path = $this->fileController->makePath("/app/Pages/$parts[0].php");
+                
+                if(file_exists($path)){
+                    
+                    if(filemtime($path) > intval($parts[1])){
+
+                        if(!$compile) $compile = true;
+    
+                        fseek($listStream, $lastPos);
+                        
+                        fwrite($listStream, "$parts[0] " . filemtime($path) . "\n");
+                    }
+
+                }
+                
+
+                $lastPos = ftell($listStream);
+            }
+
+            fclose($listStream);
+
+            return $compile;
+
         }
 
         private function resolvePageConditions($page, $data){
@@ -108,94 +181,31 @@
             
         }
 
-        // private function resolveComponentParams($componentString, $params){
-
-        //     $matches = array();
-
-
-        //     if($params != null){
-        //         extract($params);
-        //     }
-
-        //     preg_match_all("/{{([$][\w_]+)}}/", $componentString, $matches);
-
-        //     for($i = 0; $i < count($matches[1]); $i++){
-
-        //         $match = $matches[1][$i];
-
-        //         echo $match;
-
-        //         $regexSearch = "{{".$match."}}";
-                
-        //         eval("\$variable = $match;");
-                
-        //         $componentString = str_replace($regexSearch, $variable , $componentString);
-                
-        //     }
-
-        //     return $componentString;
-
-        // }
 
         private function resolveComponentParams($componentString, $params){
 
-            $matches = array();
-
-            if($params != null){
-                extract($params);
-            }
-
-            preg_match_all("/{{([$][\w_]+)}}/", $componentString, $matches);
-
-            for($i = 0; $i < count($matches[1]); $i++){
-
-                $match = $matches[1][$i];
-
-                $regexSearch = "{{".$match."}}";
+            foreach($params as $key => $match){
                 
-                eval("\$variable = $match;");
+                $stringToChange = "";
+
+                if(str_contains($match, "$") || $key != "children"){
                 
-                $componentString = str_replace($regexSearch, $variable , $componentString);
+                    $stringToChange = "$" . $key;
+                    $componentString = str_replace($stringToChange, $match , $componentString);
                 
+                }else{
+
+                    $stringToChange = "{{\$$key}}";
+                    $componentString = str_replace($stringToChange, $match , $componentString);
+                
+                }
+
             }
 
             return $componentString;
 
         }
 
-        // private function resolvePageParams($page, $data){
-
-        //     if($data != null){
-
-        //         extract($data);
-
-        //     }
-
-        //     $matches = array();
-
-        //     preg_match_all("/{{([^{}]+)}}/", $page, $matches);
-
-
-        //     for($i = 0; $i < count($matches[1]); $i++){
-
-        //         $match = $matches[1][$i];
-
-
-        //         $regexSearch = "";
-
-
-        //         $regexSearch = "{{".$match."}}";
-                
-                
-        //         eval("\$variable = $match;");
-
-
-        //         $page = str_replace($regexSearch, $variable, $page);
-                
-        //     }
-
-        //     return $page;
-        // }
         private function resolvePageParams($page, $data){
 
             if($data != null){
@@ -229,7 +239,7 @@
             
             $componentArgs = array_combine($searchResult[1], $searchResult[2]);
 
-            preg_match_all("/:([\w]+)=({{[$][\w]+}})/", $match, $searchResult);
+            preg_match_all("/:([\w]+)={{([$][\w]+)}}/", $match, $searchResult);
 
             $componentArgs = array_merge($componentArgs, array_combine($searchResult[1], $searchResult[2]));
 
@@ -251,6 +261,8 @@
 
             preg_match("/\b([\w.-]+)/", $string, $searchResult);
 
+
+            
             return $searchResult[1];
 
         }
@@ -264,13 +276,26 @@
 
             $componentString = $this->resolveComponents($componentString);
 
+            if($this->static){
+                if(!in_array($componentName, $this->allFiles)){
+                    array_push($this->allFiles, "components/$componentPath");
+                }
+            }
+
             if($componentArgs['children'] != null){
                 return str_replace("<x-$match>" . $componentArgs['children'] . "</x-$componentName>", $this->resolveComponentParams($componentString, $componentArgs) ,$page);
             }
             else{
-                return str_replace("<x-$match>", $this->resolveComponentParams($componentString, $componentArgs) ,$page);
+                return str_replace("<x-$match></x-$match>", $this->resolveComponentParams($componentString, $componentArgs) ,$page);
             }
-            
+        }
+
+        private function ifIsStatic($pageName, $page){
+            if($this->static){
+                $this->fileController->addStaticFiles($this->allFiles);
+                $this->fileController->writeToStaticPages($pageName, $page);
+            }
+
         }
     }
 

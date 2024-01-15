@@ -9,24 +9,26 @@
 
     function view($page, $data = null){
 
+
         if($data != null){
             extract($data);
         }
 
-        //header("Content-Type: text/plain");
         $fileController = new Files();
         
         $linker = new Linker();
-
+        
         $pagePath = $fileController->makePath("/app/Pages/$page" . ".php");
 
-        $page = file_get_contents($pagePath);
+        if(file_exists($pagePath)){
 
-        $page = $linker->link(file_get_contents($pagePath), $data); 
+            $page = $linker->link(file_get_contents($pagePath), $data, $page); 
 
-        $endTime = microTime(true);
-        
-        $page = eval("?>" . $page . "<?php ");
+            $page = eval("?>" . $page . "<?php ");
+
+        }
+
+
 
     }
 
