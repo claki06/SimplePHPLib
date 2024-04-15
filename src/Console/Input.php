@@ -34,11 +34,20 @@
 
             $path = "/src/Executes";
 
+            $command = "";
+
             $files = $this->fileController->readDir($path);
 
             $commandParts = explode(':', $this->input[0]);
 
-            $command = ucwords($commandParts[0]) . ucwords($commandParts[1]);
+            if(count($commandParts) > 1){
+                $command = ucwords($commandParts[0]) . ucwords($commandParts[1]);
+            }
+            else{
+                $command = ucwords($commandParts[0]);
+            }
+
+            
 
             foreach($files as $file){
 
