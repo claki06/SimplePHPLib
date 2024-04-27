@@ -39,11 +39,11 @@
 
         }
 
-        public static function query($query, $valuesToBind = array()){
+        public static function executeQuery($query, $valuesToBind = array()){
             
             $builder = Builder::getBuilder();
 
-            return $builder->bareQuery($query, $valuesToBind);
+            return $builder->bareQuery($query, $valuesToBind)->getNoModel();
 
         }
 
