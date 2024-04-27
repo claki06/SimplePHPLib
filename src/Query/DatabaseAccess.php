@@ -5,7 +5,7 @@
 
     use mysqli;
     use Exception;
-    use Framework\Helpers\ErrorHandler;
+    use Framework\Helpers\Arrays;
 
     class DatabaseAccess{
 
@@ -13,10 +13,13 @@
 
         private static $dbInstace = null;
 
+        private $colValues = array(); 
+
         public function __construct(){
 
             try {
                 $this->mysqli = new mysqli($_ENV['DB_HOST'], $_ENV['DB_USER'], $_ENV['DB_PASSWORD'], $_ENV['DB_NAME']);
+
             } catch (Exception $e) {
                 $e->getMessage();
             }
@@ -32,14 +35,6 @@
                 self::$dbInstace = new self();
             }
             return self::$dbInstace;
-        }
-
-        public function executeNoReturnQuery($query){
-            
-            $stmt = $this->mysqli->prepare($query);
-            
-            $stmt->execute();
-
         }
 
         public function executeGetAllTablesQuery($query){
@@ -61,12 +56,20 @@
         }
 
         public function getData($query = null){
-            
+
             $stmt = $this->mysqli->prepare($query);
+
+            if(substr_count($query, '?')){
+                $stmt = $this->resolveBinds($stmt, $this->colValues);
+            }
 
             $stmt->execute();
 
             $mysqliResult = $stmt->get_result();
+
+            if(!$mysqliResult){
+                return false;
+            }
 
             $usersData = [];
 
@@ -82,6 +85,9 @@
 
             }
 
+
+            $this->resetAccess();
+
             if(count($usersData) == 1){
                 return $usersData;
             }else{
@@ -90,8 +96,7 @@
 
         }
 
-        public function createRecord($query, $colValues){
-            
+        public function resolveBinds($stmt, $colValues){
             $types = '';
 
             foreach($colValues as $key => $value){
@@ -112,26 +117,20 @@
 
             $combinedArray = array_merge(array($types), $colValues);
 
-            if($stmt = $this->mysqli->prepare($query)){
 
-            call_user_func_array(array($stmt, 'bind_param'), $this->passArrayByRef($combinedArray));
+            call_user_func_array(array($stmt, 'bind_param'), Arrays::passArrayByRef($combinedArray));
 
-            $stmt->execute();
-
-            }else{
-                ErrorHandler::tableDoesntExistsError();
-            }
-                      
-              
-
+            
+            
+            return $stmt;
         }
 
-        public function passArrayByRef($array){
-            $refs = [];
-            foreach ($array as $key => $value) {
-                $refs[] = &$array[$key];
-            }
-            return $refs;
+        public function addToColValues($array){
+            $this->colValues = array_merge($this->colValues, $array);
+        }
+
+        private function resetAccess(){
+            $this->colValues = array();
         }
 
     }

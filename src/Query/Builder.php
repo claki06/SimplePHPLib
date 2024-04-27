@@ -166,8 +166,19 @@
             return $this;
         }
 
+        public function prepareBuilder($model){
+            $this->currentModel = $model;
+        }
+
         public function getAllTablesQuery(){
             $this->queries = "SHOW TABLES";
+            return $this;
+        }
+
+        public function bareQuery($query, $valuesToBind){
+
+            $this->queries = $query;
+            $this->dbAccess->addToColValues($valuesToBind);
             return $this;
         }
 
@@ -190,111 +201,143 @@
             return $this->queries;
         }
 
-        public function where($columnName, $operator, $value){
+        public function where($whereQuery, $valuesToBind = null){
 
-            if(gettype($value) == "string"){
-                $this->queries .= "WHERE $columnName $operator '$value' ";
-            }else{
-                $this->queries .= "WHERE $columnName $operator $value ";
-            }
+            $this->queries .= " WHERE " . $whereQuery;
+
+            if(!is_null($valuesToBind)) $this->dbAccess->addToColValues($valuesToBind);
 
             return $this;
         }
 
-        public function and($columnName, $operator, $value){
+        public function and($andQuery, $valuesToBind = null){
 
-            if(gettype($value) == "string"){
-                $this->queries .= "AND $columnName $operator '$value' ";
-            }else{
-                $this->queries .= "AND $columnName $operator $value ";
-            }
+            $this->queries .= " AND " . $andQuery;
+
+            if(!is_null($valuesToBind)) $this->dbAccess->addToColValues($valuesToBind);
 
             return $this;
         }
 
-        public function or($columnName, $operator, $value){
+        public function or($orQuery, $valuesToBind){
 
-            if(gettype($value) == "string"){
-                $this->queries .= "OR $columnName $operator '$value' ";
-            }else{
-                $this->queries .= "OR $columnName $operator $value ";
-            }
+            
+            $this->queries .= " OR " . $orQuery;
+
+            if(!is_null($valuesToBind)) $this->dbAccess->addToColValues($valuesToBind);
 
             return $this;
         }
 
-        public function create($colValues, $tableName){
+        public function create($valuesToBind, $tableName){
 
-            $columns = implode(', ', array_keys($colValues));
+            $columns = implode(', ', array_keys($valuesToBind));
 
             $values = [];
             
-            for($i = 0; $i < count($colValues); $i++){
+            for($i = 0; $i < count($valuesToBind); $i++){
                 $values[] = "?";
             }
 
             $values = implode(", ", $values);
 
-            $query = "INSERT INTO $tableName ($columns) VALUES ($values)";
+            $this->queries = "INSERT INTO $tableName ($columns) VALUES ($values)";
+
+            $this->dbAccess->addToColValues($valuesToBind);
             
-            return $query;
+            return $this;
         }
 
-        public function hasMany($leftTable, $rightTable, $model, $leftKey, $rightKey, $identifier){
+        public function hasMany($leftTable, $rightTable, $model, $leftKey, $rightKey, $identifier, $columns){
 
             $this->currentModel = $model;
 
-            $this->queries = "SELECT $rightTable.* FROM $leftTable INNER JOIN $rightTable ON $leftTable.$leftKey = $rightTable.$rightKey WHERE $leftTable.$leftKey = $identifier ";
+            if($columns == null){
+                $columns[] = '*'; 
+            }
 
-            return $this->get();
+            $columnsString = implode(", ", $columns);
+
+            $this->queries = "SELECT $rightTable.$columnsString FROM $leftTable INNER JOIN $rightTable ON $leftTable.$leftKey = $rightTable.$rightKey WHERE $leftTable.$leftKey = $identifier";
+
+            return $this;
         }
 
-        public function belongsTo($leftTable, $rightTable, $model, $leftKey, $rightKey, $identifier){
+        public function belongsTo($leftTable, $rightTable, $model, $leftKey, $rightKey, $identifier, $columns){
 
             $this->currentModel = $model;
 
-            $this->queries = "SELECT $rightTable.* FROM $leftTable INNER JOIN $rightTable ON $leftTable.$leftKey = $rightTable.$rightKey WHERE $leftTable.$leftKey = $identifier LIMIT 1 ";
+            if($columns == null){
+                $columns[] = '*'; 
+            }
 
-            return $this->get(true);
+            $columnsString = implode(", ", $columns);
+
+            $this->queries = "SELECT $rightTable.$columnsString FROM $leftTable INNER JOIN $rightTable ON $leftTable.$leftKey = $rightTable.$rightKey WHERE $leftTable.$leftKey = $identifier LIMIT 1 ";
+
+            return $this;
         }
 
-        public function get($returnArr = false){
+
+        public function getNoModel(){
+            $data = $this->dbAccess->getData($this->queries);
+
+            if(!$data){
+                return false;
+            }
+
+            return $data;
+        }
+
+        public function get($singleRow = false){
 
             $data = $this->dbAccess->getData($this->queries);
 
-            $models = [];
+            if(!$data){
+                return false;
+            }
 
             $modelName = $this->currentModel;
 
-            // if($returnArr){
+            if(!$singleRow){
 
-            //     $model = new $modelName();
+                $models = [];
 
-            //     foreach($data[0] as $column => $value){
+                foreach($data as $row){
 
-            //         $model->$column = $value;
+                    $model = new $modelName();
 
-            //     }
+                    foreach($row as $column => $value){
 
-            //     return $model;
-            // }
+                        $model->$column = $value;
+                    }
 
+                    $models[] = $model;
 
-            foreach($data as $user){
+                }
+
+                $this->resetBuilder();
+                return $models;
+            }
+            else{
 
                 $model = new $modelName();
 
-                foreach($user as $column => $value){
+                foreach($data[0] as $column => $value){
 
                     $model->$column = $value;
                 }
 
-                $models[] = $model;
-
+                $this->resetBuilder();
+                return $model;
             }
+            
 
-            return $models;
 
+        }
+
+        public function resetBuilder(){
+            $this->queries = '';
         }
 
     }

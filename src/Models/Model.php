@@ -23,19 +23,27 @@
             $this->$name = $value;
         }
 
-        protected function hasMany($class , $localKey, $foreignKey){
+        protected function hasMany($class , $localKey, $foreignKey, $columns = null){
 
             $builder = Builder::getBuilder();
 
-            return $builder->hasMany(get_called_class()::$table , $class::$table, $class ,$localKey, $foreignKey, $this->$localKey);
+            return $builder->hasMany(get_called_class()::$table , $class::$table, $class ,$localKey, $foreignKey, $this->$localKey, $columns);
             
         }
 
-        protected function belongsTo($class, $localKey, $foreignKey){
+        protected function belongsTo($class, $localKey, $foreignKey, $columns = null){
             
             $builder = Builder::getBuilder();
 
-            return $builder->belongsTo(get_called_class()::$table, $class::$table, $class, $localKey, $foreignKey, $this->$localKey);
+            return $builder->belongsTo(get_called_class()::$table, $class::$table, $class, $localKey, $foreignKey, $this->$localKey, $columns);
+
+        }
+
+        public static function query($query, $valuesToBind = array()){
+            
+            $builder = Builder::getBuilder();
+
+            return $builder->bareQuery($query, $valuesToBind);
 
         }
 
@@ -53,7 +61,7 @@
             $db = DatabaseAccess::getDB();
             $builder = Builder::getBuilder();
 
-            $db->createRecord($builder->create($colValues, get_called_class()::$table), $colValues);
+            $builder->create($colValues, get_called_class()::$table)->get();
             
             $model = new Model();
 
