@@ -58,7 +58,7 @@
 
         public static function create($colValues){
             
-            $db = DatabaseAccess::getDB();
+            $db = new DatabaseAccess();
             $builder = Builder::getBuilder();
 
             $builder->create($colValues, get_called_class()::$table)->get();

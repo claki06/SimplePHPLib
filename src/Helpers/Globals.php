@@ -87,6 +87,14 @@
 
     }
 
+    function getSessionValue($argumentName){
+        return $_SESSION[$argumentName];
+    }
+
+    function setSessionValue($argumentName, $value){
+        $_SESSION[$argumentName] = $value;
+    }
+
     function isMobile(){
         return Route::isMobile();
     }

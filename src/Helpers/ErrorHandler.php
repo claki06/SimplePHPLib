@@ -30,7 +30,7 @@
             exit();
         }
 
-        private function TerminateError(){
+        public function TerminateError(){
 
             $error = error_get_last();
             $errorType = $this->exceptions[$error['type']];

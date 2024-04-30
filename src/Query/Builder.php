@@ -22,7 +22,7 @@
 
         public function __construct(){
             $this->fileController = new Files();
-            $this->dbAccess = DatabaseAccess::getDB();
+            $this->dbAccess = new DatabaseAccess();
         }
 
         public static function getBuilder(){
@@ -290,6 +290,8 @@
         }
 
         public function get($singleRow = false){
+
+
 
             $data = $this->dbAccess->getData($this->queries);
 

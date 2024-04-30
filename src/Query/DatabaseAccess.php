@@ -18,7 +18,9 @@
         public function __construct(){
 
             try {
+
                 $this->mysqli = new mysqli($_ENV['DB_HOST'], $_ENV['DB_USER'], $_ENV['DB_PASSWORD'], $_ENV['DB_NAME']);
+                
 
             } catch (Exception $e) {
                 $e->getMessage();
@@ -28,13 +30,6 @@
                 echo "Connection Error: " . $this->mysqli->connect_error;
             }
 
-        }
-
-        public static function getDB(){
-            if(self::$dbInstace == null){
-                self::$dbInstace = new self();
-            }
-            return self::$dbInstace;
         }
 
         public function executeGetAllTablesQuery($query){
@@ -55,7 +50,9 @@
 
         }
 
-        public function getData($query = null){
+        public function getData($query = null){   
+
+            
 
             $stmt = $this->mysqli->prepare($query);
 

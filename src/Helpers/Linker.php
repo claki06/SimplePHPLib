@@ -117,6 +117,11 @@
             preg_match_all("/@foreach([\p{Any}]+?)\)[\n\r\t]/", $page, $foreachMatches);
             preg_match_all("/(@error\(\"([^*]+?)\"\)([^*]+?)@enderror)/", $page, $errorMatches);
 
+            if(str_contains($page, "@csrf")){
+                $CSRFToken = base64_encode(openssl_random_pseudo_bytes(64));
+                $page = str_replace("@csrf", "<input type='hidden' name='CSRFToken' value='". $CSRFToken . "' />", $page);
+                setSessionValue("CSRFToken", $CSRFToken);
+            }
 
             for($i = 0; $i < count($ifMatches[1]); $i++){
                 $ifMatches[1][$i] .= ")";
@@ -141,7 +146,6 @@
                 else{
                     $page = str_replace($errorMatches[0][$i], "", $page);
                 }
-
 
             }
 

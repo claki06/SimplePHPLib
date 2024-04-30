@@ -2,7 +2,8 @@
 
     namespace Framework\Routing;
 
-    use Framework\Routing\Middleware;
+use Exception;
+use Framework\Routing\Middleware;
 
 
     class Route{
@@ -91,6 +92,7 @@
 
 
         public static function post($route, $callable, $action = null ){
+
             
             if($_SERVER["REQUEST_METHOD"] != "POST"){
                 return;
@@ -99,11 +101,17 @@
             $uri = $_SERVER["REQUEST_URI"];
 
             if($action == null && $route == $uri){
+
+                Route::checkCSRFToken();
+
                 $callable($_POST);
+                
                 exit();
             }
 
             if($uri == $route){
+
+                Route::checkCSRFToken();
 
                 $controller = new $callable();
 
@@ -153,6 +161,15 @@
 
             return preg_match('/^.*[mM]obile.*/',$_SERVER["HTTP_USER_AGENT"]);
 
+        }
+
+        private static function checkCSRFToken(){
+            if(getSessionValue("CSRFToken") == $_POST["CSRFToken"]){
+                return;
+            }else{
+                redirect('/');
+                exit();
+            }
         }
 
     }
