@@ -4,12 +4,26 @@
 
     class Validator{
 
+
+        /**
+         * @var assoc[var]: validated data
+         */
         private $validatedData = array();
         
+
+        /**
+         * @var assoc[string]: error messages for form inputs that
+         * dont meet requirements 
+         */
         private $errorMessages = array();
 
 
-
+        /**
+         * checks if form input meets requirements for one condition
+         * @param string $key: form input name
+         * @param var $data: data given in form input
+         * @param string $condition: condition for current form input
+         */
         private function checkInput($key, $data, $condition){
 
 
@@ -65,6 +79,13 @@
 
         }
 
+
+        /**
+         * Checks current form input with conditions
+         * @param string $key: form input name
+         * @param var $userInput: form input value
+         * @param string $conditionsString: string of conditions for current form input
+         */
         public function validateKey($key, $userInput, $conditionsString){
 
             $conditions = explode("|",$conditionsString);
@@ -77,6 +98,12 @@
 
         }
 
+
+        /**
+         * If there are form inputs that didn't pass validation
+         * redirects user to last get URI
+         * @param string $url: url to redirect user if validation fails
+         */
         public function redirectIfNotPassed($url = null){
 
 
@@ -90,21 +117,23 @@
 
                     exit();
                 }
+                else{
+                    redirect($url);
+                    exit();
+                }
 
             }
 
         }
 
+
+        /**
+         * Returns data that passed the validation
+         * @return assoc[var]
+         */
         public function getData(){
 
-
             return $this->validatedData;
-
-            // if(empty($this->errorMessages)){
-            //     return $this->validatedData;
-            // }else{
-            //     return $this->errorMessages;
-            // }
 
         }
 

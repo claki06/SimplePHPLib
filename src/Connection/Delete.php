@@ -9,14 +9,29 @@
 
     class Delete{
 
+
+        /**
+         * @var DatabaseAccess
+         */
         private $dbAccess;
+
+
+        /**
+         * @var Builder
+         */
         private $queryBuilder;
+
 
         public function __construct(){
             $this->dbAccess = new DatabaseAccess();
             $this->queryBuilder = new Builder();
         }
 
+
+        /**
+         * Deletes tables in database defined in .enf file
+         * @param string[] $tablesToDelete: array of tables to delete
+         */
         public function deleteTables($tablesToDelete = null){
 
             $queries = [];

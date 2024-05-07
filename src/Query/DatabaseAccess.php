@@ -9,11 +9,19 @@
 
     class DatabaseAccess{
 
+
+        /**
+         * @var mysqli
+         */
         private $mysqli;
 
-        private static $dbInstace = null;
 
+        /**
+         * @var string[]: columns to get
+         */
         private $colValues = array(); 
+
+
 
         public function __construct(){
 
@@ -32,6 +40,12 @@
 
         }
 
+
+        /**
+         * Returns string array of tables in database
+         * @param string $query: query to get tables
+         * @return string[]
+         */
         public function executeGetAllTablesQuery($query){
 
             $stmt = $this->mysqli->prepare($query);
@@ -50,9 +64,26 @@
 
         }
 
-        public function getData($query = null){   
 
-            
+        /**
+         * Executes query without any retunr
+         * @param string $query: query to execute
+         */
+        public function executeNoReturnQuery($query){
+
+            $stmt = $this->mysqli->prepare($query);
+
+            $stmt->execute();
+
+        }
+
+
+        /**
+         * Returns rows as assoc array
+         * @param string $query: query to execute
+         * @return assoc[var]
+         */
+        public function getData($query = null){   
 
             $stmt = $this->mysqli->prepare($query);
 
@@ -82,9 +113,6 @@
 
             }
 
-
-            $this->resetAccess();
-
             if(count($usersData) == 1){
                 return $usersData;
             }else{
@@ -93,10 +121,16 @@
 
         }
 
+
+        /**
+         * Returns $stmt with resolved binds
+         * @param mysqli_stmt $stmt: stmt to which to bind values
+         * @return mysqli_stmt
+         */
         public function resolveBinds($stmt, $colValues){
             $types = '';
 
-            foreach($colValues as $key => $value){
+            foreach($colValues as $value){
 
                 if(is_int($value)){
                     $types .= 'i';
@@ -116,18 +150,17 @@
 
 
             call_user_func_array(array($stmt, 'bind_param'), Arrays::passArrayByRef($combinedArray));
-
-            
             
             return $stmt;
         }
 
+
+        /**
+         * Adds $array to colValues
+         * @param string[] $array: string array of columns to get
+         */
         public function addToColValues($array){
             $this->colValues = array_merge($this->colValues, $array);
-        }
-
-        private function resetAccess(){
-            $this->colValues = array();
         }
 
     }

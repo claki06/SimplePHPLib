@@ -7,9 +7,25 @@
 
     class Linker{
 
+        /**
+         * @var Files
+         */
         private $fileController;
+
+
+        /**
+         * @var bool
+         */
         private $static = false;
+
+
+        /**
+         * All paths of static pages inside /app/Pages
+         * @var string[]
+         */
         private $allFiles = array();
+
+
 
         public function __construct()
         {
@@ -17,6 +33,14 @@
 
         }
 
+
+        /**
+         * Returns resolved page (conditions, variables)
+         * @param string $page: raw content of page
+         * @param assoc[var] $data: variables available in page
+         * @param string $pageName: page name
+         * @return string
+         */
         public function link($page, $data, $pageName){
     
             $componentsPath = $this->fileController->makePath("/app/Pages/components");
@@ -54,6 +78,12 @@
             return $page;
         }
 
+
+        /**
+         * Decides if page should compile
+         * @param string $pageName: page name
+         * @return true|false
+         */
         private function shouldCompile($pageName){
             
             $compile = false;
@@ -103,6 +133,13 @@
 
         }
 
+
+        /**
+         * Returns resolved page (of conditions)
+         * @param string $page: page content
+         * @param assoc[var] $data: variables available in page
+         * @return string
+         */
         private function resolvePageConditions($page, $data){
 
             if($data != null){
@@ -160,6 +197,12 @@
 
         }
 
+
+        /**
+         * Returns resolved page (of components)
+         * @param string $page: page content(where component is located)
+         * @return string
+         */
         private function resolveComponents($page){
 
             $matches = array();
@@ -186,6 +229,12 @@
         }
 
 
+        /**
+         * Returns resolved component (variables with passed arguments)
+         * @param string $componentString: component content
+         * @param assoc[var] $params: assoc array of arguments passed to component
+         * @return 
+         */
         private function resolveComponentParams($componentString, $params){
 
             foreach($params as $key => $match){
@@ -210,6 +259,13 @@
 
         }
 
+
+        /**
+         * Returns resolved page (variables with arguments passed to page (available variable))
+         * @param string $page: page content
+         * @param assoc[var] $params: assoc array of parameters passed to page
+         * @return string
+         */
         private function resolvePageParams($page, $data){
 
             if($data != null){
@@ -235,6 +291,14 @@
             return $page;
         }
 
+
+        /**
+         * Returns assoc array of arguments passed to component
+         * @param string $match: component $match (<x-[$match])
+         * @param string $componentName: component name with dots(.)
+         * @param string $page: page content
+         * @return assoc[string]
+         */
         private function extractComponentAttributes($match, $componentName, $page){
 
             $searchResult = array();
@@ -261,16 +325,29 @@
             return $componentArgs;
         }
 
-        private function extractComponentName($string){
 
-            preg_match("/\b([\w.-]+)/", $string, $searchResult);
+        /**
+         * Returns component name from $string (<x-[$match])
+         * @param string $match: match inside tag (<x-[$match])
+         * @return string
+         */
+        private function extractComponentName($match){
 
+            preg_match("/\b([\w.-]+)/", $match, $searchResult);
 
-            
             return $searchResult[1];
 
         }
 
+
+        /**
+         * Returns resovled component string
+         * @param string $match: match inside tag (<x-[$match])
+         * @param assoc[string] $componentArgs: assoc array of passed args to component
+         * @param string $componentName: compnent name with dots(.)
+         * @param string $page: page content
+         * @return string
+         */
         private function resolveComponentString($match, $componentArgs, $componentName, $page){
 
 
@@ -294,6 +371,12 @@
             }
         }
 
+
+        /**
+         * Write page content to static files if page is static
+         * @param string $pageName: page name
+         * @param string $page: page content
+         */
         private function ifIsStatic($pageName, $page){
             if($this->static){
                 $this->fileController->addStaticFiles($this->allFiles);

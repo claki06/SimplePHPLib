@@ -6,8 +6,18 @@
 
     class Download{
 
+
+        /**
+         * Path to Downloads folder
+         * @var string
+         */
         public $path = "/app/Downloads/";
 
+
+        /**
+         * Starts to download given file
+         * @param string $filename: name of file to download
+         */
         public function download($filename){
 
             $fileController = new Files();

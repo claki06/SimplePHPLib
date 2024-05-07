@@ -4,10 +4,29 @@
 
     class Upload{
 
+
+        /**
+         * @var string[]: Allowed extensions to be uploaded
+         */
         public $extensions = null;
+
+
+        /**
+         * @var string: path to /app/Uploads
+         */
         public $path = "/app/Uploads/";
+
+
+        /**
+         * @var int: max file size that can be uploaded to server
+         */
         public $maxFileSize = 6055360;
 
+
+        /**
+         * Starts to upload file
+         * @param string $name: form input name
+         */
         public function upload($name){
         
     
@@ -36,11 +55,7 @@
                 echo "SUCCESS";
     
             }
-    
-            
-    
-    
-    
+
         }
 
     }

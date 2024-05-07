@@ -6,12 +6,28 @@
 
     class Factory{
 
+
+        /**
+         * @var string: name of model
+         */
         protected $modelName = "";
 
+
+        /**
+         * @var int: number of records to make in table
+         */
         protected $count = 1;
 
+
+        /**
+         * @var assoc[string]: assoc array with name of column and FactoryKeys
+         */
         protected $colValues = [];
 
+
+        /**
+         * @var string[]: fake names
+         */
         private $names = [
             'Johnathon',
             'Anthony',
@@ -65,6 +81,10 @@
             'Samatha',
         ];
 
+
+        /**
+         * @var string[]: fake usernames
+         */
         private $usernames = [
             'Mischke',
             'Serna',
@@ -118,6 +138,10 @@
             'Ramage'
         ];
 
+
+        /**
+         * @var string[]: fake emails
+         */
         private $emails = [
             "disturbedDesiree41@live.ca",
             "Maggiemushy@home.nl",
@@ -171,6 +195,12 @@
             "crowdedEric@aim.com",
         ];
 
+
+        /**
+         * Converts factory keys to fake data
+         * @param string $key: factory key
+         * @return var $fakeData: fake data corresponding to factory key
+         */
         public function convertFactoryKey($key){
 
             switch($key){
@@ -194,6 +224,10 @@
 
         }
 
+
+        /**
+         * Creates fake records in database
+         */
         public function create(){
 
             $modelLoc = "App\\Models\\" . $this->modelName;
@@ -201,14 +235,14 @@
 
             for($i = 0; $i < $this->count; $i++){
 
-                $colValues = [];
+                $dataToInsert = [];
                 foreach($this->colValues as $key => $value){
 
-                    $colValues[$key] = $this->convertFactoryKey($value);
+                    $dataToInsert[$key] = $this->convertFactoryKey($value);
 
                 }
 
-                $model->create($colValues);
+                $model->create($dataToInsert);
     
             }
 

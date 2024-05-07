@@ -10,29 +10,43 @@
 
     class Builder{
 
+
+        /**
+         * @var Files
+         */
         private $fileController;
 
+
+        /**
+         * @var string[]\string: query or queries to execute
+         */
         private $queries;
 
-        private static $builderInstace = null;
 
+        /**
+         * @var DatabaseAccess
+         */
         private $dbAccess;
 
+
+        /**
+         * @var string: model which we want to get
+         */
         private $currentModel;
+
+
 
         public function __construct(){
             $this->fileController = new Files();
             $this->dbAccess = new DatabaseAccess();
         }
 
-        public static function getBuilder(){
-            if(self::$builderInstace == null){
-                self::$builderInstace = new self();
-            }
 
-            return self::$builderInstace;
-        }
-
+        /**
+         * Created queries to create table in database
+         * @param string[] $tablesToMigrate: string array of table names
+         * @return Builder
+         */
         public function buildTableQueries($tablesToMigrate = null){
 
             $tableQueries = [];
@@ -56,6 +70,13 @@
         }
 
 
+        /**
+         * Resolves columns properties for current table with table keys
+         * @param assoc[string] $columnsProperties: assoc array where key is column name
+         * and value is column table keys
+         * @param string $tableName: table name
+         * @return string
+         */
         private function resolveTableColumnProperties($columnProperties, $tableName){
 
             $formatedColumnProperties = [];
@@ -105,6 +126,13 @@
         }
 
 
+        /**
+         * Creates query
+         * @param assoc[string] $formatedColumnProperties: assoc array with keys as functionality part
+         * and value value is formated table keys
+         * @param string $tableName: name of table
+         * @return string
+         */
         private function makeColumnsSql($formatedColumnProperties, $tableName){
 
             $sql = "";
@@ -148,15 +176,19 @@
             return "CREATE TABLE $tableName ($sql)";
         }
 
+
+        /**
+         * Makes queries to delete tables in database
+         * @param string[] $tablesToDelete: string array of table names to delete
+         * @return Builder
+         */
         public function deleteTableQueries($tablesToDelete = null){
 
-            $tableQueries = [];
-            $tables = $tablesToDelete;
-            
+            $tableQueries = [];            
 
-            foreach($tables as $table){
+            foreach($tablesToDelete as $table){
                 
-                $lowerCaseTableName = lcfirst($table);
+                $lowerCaseTableName = strtolower($table);
 
                 $tableQueries[] = "DROP TABLE $lowerCaseTableName";
 
@@ -166,15 +198,23 @@
             return $this;
         }
 
-        public function prepareBuilder($model){
-            $this->currentModel = $model;
-        }
 
+        /**
+         * Makes query to show all tables;
+         * @return Builder
+         */
         public function getAllTablesQuery(){
             $this->queries = "SHOW TABLES";
             return $this;
         }
 
+
+        /**
+         * Make bare query (programmer defined whole query)
+         * @param string @query: query to execute
+         * @param var[] $valuesToBind: array of values to bind to query
+         * @return Builder
+         */
         public function bareQuery($query, $valuesToBind){
 
             $this->queries = $query;
@@ -182,6 +222,13 @@
             return $this;
         }
 
+
+        /**
+         * Makes select query and defined model to create
+         * @param string $model: model name
+         * @param string $tableName: table name
+         * @param string[] $columnsArray: array of columns to get
+         */
         public function getModelQuery($model, $tableName, $columnsArray = null){
 
             $this->currentModel = $model;
@@ -197,10 +244,22 @@
             $this->queries = "SELECT $columnsString FROM $tableName ";
         }
 
+
+        /**
+         * Returns query of this Builder
+         * @return string
+         */
         public function getQuery(){
             return $this->queries;
         }
 
+
+        /**
+         * Adds where clause to query
+         * @param string @whereQuery: where query part
+         * @param var[] $valuesToBind: array of values to bind to query
+         * @return Builder
+         */
         public function where($whereQuery, $valuesToBind = null){
 
             $this->queries .= " WHERE " . $whereQuery;
@@ -210,6 +269,12 @@
             return $this;
         }
 
+        
+        /**
+         * @param string @andQuery: and query part
+         * @param var[] $valuesToBind: array of values to bind to query
+         * @return Builder
+         */
         public function and($andQuery, $valuesToBind = null){
 
             $this->queries .= " AND " . $andQuery;
@@ -219,9 +284,14 @@
             return $this;
         }
 
-        public function or($orQuery, $valuesToBind){
 
-            
+        /**
+         * @param string @orQuery: or query part
+         * @param var[] $valuesToBind: array of values to bind to query
+         * @return Builder
+         */
+        public function or($orQuery, $valuesToBind = null){
+
             $this->queries .= " OR " . $orQuery;
 
             if(!is_null($valuesToBind)) $this->dbAccess->addToColValues($valuesToBind);
@@ -229,13 +299,20 @@
             return $this;
         }
 
-        public function create($valuesToBind, $tableName){
 
-            $columns = implode(', ', array_keys($valuesToBind));
+        /**
+         * @param assoc[var] $columnData: assoc array with columns as keys
+         * and column values as value
+         * @param string $tableName: table name
+         * @return Builder
+         */
+        public function create($columnData, $tableName){
+
+            $columns = implode(', ', array_keys($columnData));
 
             $values = [];
             
-            for($i = 0; $i < count($valuesToBind); $i++){
+            for($i = 0; $i < count($columnData); $i++){
                 $values[] = "?";
             }
 
@@ -243,11 +320,23 @@
 
             $this->queries = "INSERT INTO $tableName ($columns) VALUES ($values)";
 
-            $this->dbAccess->addToColValues($valuesToBind);
+            $this->dbAccess->addToColValues(array_values($columnData));
             
             return $this;
         }
 
+
+        /**
+         * Builds query for one to many relationship
+         * @param string $leftTable: name of left table
+         * @param string $rightTable: name of right table
+         * @param string $model: namespace and model name /App/Models/x
+         * @param string $leftKey: primary key of left table
+         * @param string $rightKey: primary key of right table
+         * @param var $identifier: id of current model
+         * @param string[] $columns: columns to get from query
+         * @return Build
+         */
         public function hasMany($leftTable, $rightTable, $model, $leftKey, $rightKey, $identifier, $columns){
 
             $this->currentModel = $model;
@@ -263,6 +352,18 @@
             return $this;
         }
 
+
+        /**
+         * Builds query for one to many relationship
+         * @param string $leftTable: name of left table
+         * @param string $rightTable: name of right table
+         * @param string $model: namespace and model name /App/Models/x
+         * @param string $leftKey: primary key of left table
+         * @param string $rightKey: primary key of right table
+         * @param var $identifier: value of primary key of current model
+         * @param string[] $columns: columns to get from query
+         * @return Build
+         */
         public function belongsTo($leftTable, $rightTable, $model, $leftKey, $rightKey, $identifier, $columns){
 
             $this->currentModel = $model;
@@ -279,6 +380,10 @@
         }
 
 
+        /**
+         * Returns data in form of assoc array (no model)
+         * @return assoc[var]
+         */
         public function getNoModel(){
             $data = $this->dbAccess->getData($this->queries);
 
@@ -289,9 +394,13 @@
             return $data;
         }
 
+
+        /**
+         * Returns data in form of model
+         * @param bool $singleRow: if true, returns only first row of data in form of model
+         * otherwise it returns array of models
+         */
         public function get($singleRow = false){
-
-
 
             $data = $this->dbAccess->getData($this->queries);
 
@@ -318,7 +427,6 @@
 
                 }
 
-                $this->resetBuilder();
                 return $models;
             }
             else{
@@ -330,18 +438,9 @@
                     $model->$column = $value;
                 }
 
-                $this->resetBuilder();
                 return $model;
             }
-            
-
-
         }
-
-        public function resetBuilder(){
-            $this->queries = '';
-        }
-
     }
 
 ?>

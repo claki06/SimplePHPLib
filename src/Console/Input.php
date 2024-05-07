@@ -6,13 +6,19 @@
 
     class Input{
         
+
         /**
-         * Array of arguments
+         * @var string[] array of args given in console
          */
         private $input = [];
 
+
+        /**
+         * @var Files
+         */
         private $fileController;
         
+
         public function __construct($argv){
 
             array_shift($argv);
@@ -21,15 +27,29 @@
 
             $this->fileController = new Files();
 
+            $this->executeCommand($argv);
+ 
+        }
+
+
+        /**
+         * Executes command with $input
+         */
+        public function executeCommand($argv){
             if($command = $this->validateInput()){
                 require($this->fileController->getBasePath() . "/src/Executes/" . $command . ".php");
             }
             else{
                 echo "This command doesn't exist! \n";
             }
-            
         }
 
+
+        /**
+         * Checks if given commands exists
+         * @return string $command if command exists 
+         * @return null
+         */
         private function validateInput(){
 
             $path = "/src/Executes";
@@ -46,8 +66,6 @@
             else{
                 $command = ucwords($commandParts[0]);
             }
-
-            
 
             foreach($files as $file){
 

@@ -6,7 +6,7 @@
 
     class User extends Model{
 
-        protected static $table = "example";
+        protected static $table = "users";
 
     }
 

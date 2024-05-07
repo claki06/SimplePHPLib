@@ -2,14 +2,20 @@
 
     namespace Framework\Routing;
 
-use Exception;
-use Framework\Routing\Middleware;
+    use Exception;
+    use Framework\Routing\Middleware;
 
 
     class Route{
 
         
-
+        /**
+         * Checks if HTTP request is GET request and executes callable or action 
+         * if request URI matches with $route
+         * @param string $route: URI
+         * @param function|Controller $callable: function or controllable
+         * @param string $action: function inside $callable controller
+         */
         public static function get($route, $callable, $action = null){
             
             if($_SERVER["REQUEST_METHOD"] != "GET"){
@@ -25,7 +31,6 @@ use Framework\Routing\Middleware;
                 $uri = $_SERVER["REQUEST_URI"];
 
             }
-
 
 
             $uriParts = explode('/', $uri);
@@ -90,7 +95,13 @@ use Framework\Routing\Middleware;
         }
 
 
-
+        /**
+         * Checks if HTTP request is POST request and executes callable or action 
+         * if request URI matches with $route
+         * @param string $route: URI
+         * @param function|Controller $callable: function or controllable
+         * @param string $action: function inside $callable controller
+         */
         public static function post($route, $callable, $action = null ){
 
             
@@ -121,6 +132,14 @@ use Framework\Routing\Middleware;
             }
         }
 
+
+        /**
+         * Groups Route::get and Route::post URIs and allows only users with 
+         * access type privilages to access them
+         * @param string $accessType: access privlage
+         * @param function $callable: function with Route::get and Route:post 
+         * for coresponding access type
+         */
         public static function group($accessType, $callable){
 
             $middleWare = new Middleware();
@@ -139,6 +158,12 @@ use Framework\Routing\Middleware;
 
         }
 
+
+        /**
+         * Checks if user is on computer
+         * @param function $callback: function with Route::get and Route:post 
+         * for computer
+         */
         public static function computer($callback){
 
             if(!Route::isMobile()){
@@ -149,6 +174,12 @@ use Framework\Routing\Middleware;
 
         }
 
+
+        /**
+         * Checks if user is on phone
+         * @param function $callback: function with Route::get and Route:post 
+         * for phone
+         */
         public static function phone($callback){
             if(Route::isMobile()){
 
@@ -157,12 +188,21 @@ use Framework\Routing\Middleware;
             }
         }
 
+
+        /**
+         * Checks if user is on phone or not
+         * @return int|false
+         */
         public static function isMobile(){
 
             return preg_match('/^.*[mM]obile.*/',$_SERVER["HTTP_USER_AGENT"]);
 
         }
 
+
+        /**
+         * Checks if CSRF tokens match
+         */
         private static function checkCSRFToken(){
             if(getSessionValue("CSRFToken") == $_POST["CSRFToken"]){
                 return;

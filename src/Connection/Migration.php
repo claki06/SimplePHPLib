@@ -12,8 +12,21 @@
 
     class Migration{
 
+        /**
+         * @var DatabaseAccess
+         */
         private $dbAccess;
+
+
+        /**
+         * @var Builder
+         */
         private $queryBuilder;
+
+
+        /**
+         * @var Files
+         */
         private $fileController;
 
         public function __construct(){
@@ -22,6 +35,13 @@
             $this->fileController = new Files();
         }
 
+
+        /**
+         * Checks all tables in database defined in .env and compares them with tables
+         * to migrate and if they have same name it will ask user if he wants to
+         * delete table that is already in database.
+         * @param string[] $tablesToMigrate: array of tables names to migrate
+         */
         private function deleteTableIfExists($tablesToMigrate){
 
             $tablesInDB = $this->dbAccess->executeGetAllTablesQuery($this->queryBuilder->getAllTablesQuery()->getQuery());
@@ -64,6 +84,11 @@
 
         }
 
+
+        /**
+         * Migrates tables to database
+         * @param string[] $tablesToMigrate: array of tables names to migrate
+         */
         public function migrateTable($tablesToMigrate = null){  
             
             $this->deleteTableIfExists($tablesToMigrate);
