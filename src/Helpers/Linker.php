@@ -69,9 +69,9 @@
                 $page = $this->resolveComponents($page);
             }
 
-            $page = $this->resolvePageParams($page, $data);
-
             $page = $this->resolvePageConditions($page, $data);
+
+            $page = $this->resolvePageParams($page, $data);
 
             $this->ifIsStatic($pageName, $page);
 
@@ -152,11 +152,10 @@
 
             preg_match_all("/@if([\p{Any}]+?)\)[\n\r\t]/", $page, $ifMatches);
             preg_match_all("/@foreach([\p{Any}]+?)\)[\n\r\t]/", $page, $foreachMatches);
-            preg_match_all("/(@error\(\"([^*]+?)\"\)([^*]+?)@enderror)/", $page, $errorMatches);
 
             if(str_contains($page, "@csrf")){
                 $CSRFToken = base64_encode(openssl_random_pseudo_bytes(64));
-                $page = str_replace("@csrf", "<input type='hidden' name='CSRFToken' value='". $CSRFToken . "' />", $page);
+                $page = str_replace("@csrf", "<input type='hidden' id='CSRFInput' name='CSRFToken' value='". $CSRFToken . "' />", $page);
                 setSessionValue("CSRFToken", $CSRFToken);
             }
 
@@ -174,10 +173,12 @@
                 $page = str_replace("@foreach" . $foreachMatches[1][$i], "<?php foreach" . $foreachMatches[1][$i] . ": ?>", $page);
             }
 
+            preg_match_all("/(@error\(\"([^*]+?)\"\)([^*]+?)@enderror)/", $page, $errorMatches);
+
             for($i = 0; $i < count($errorMatches[1]); $i++){
 
                 if(isset($_SESSION['VALIDATION_FAILS'][$errorMatches[2][$i]])){
-                    $errorMatches[3][$i] = str_replace("{{\$message}}", "<?php echo \$_SESSION['VALIDATION_FAILS']['" . $errorMatches[2][$i] . "'] ?>", $errorMatches[3][$i]);
+                    $errorMatches[3][$i] = str_replace("\$messages", "\$_SESSION['VALIDATION_FAILS']['" . $errorMatches[2][$i] . "']", $errorMatches[3][$i]);
                     $page = str_replace($errorMatches[0][$i], $errorMatches[3][$i], $page);
                 }
                 else{
@@ -243,12 +244,14 @@
 
                 if(str_contains($match, "$") || $key != "children"){
                 
-                    $stringToChange = "$" . $key;
+                    $stringToChange = "{{\$$key}}";
+
                     $componentString = str_replace($stringToChange, $match , $componentString);
                 
                 }else{
 
                     $stringToChange = "{{\$$key}}";
+
                     $componentString = str_replace($stringToChange, $match , $componentString);
                 
                 }
@@ -273,6 +276,7 @@
                 extract($data);
 
             }
+
 
             $matches = array();
 

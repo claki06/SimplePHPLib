@@ -17,7 +17,7 @@
          * @param string $action: function inside $callable controller
          */
         public static function get($route, $callable, $action = null){
-            
+
             if($_SERVER["REQUEST_METHOD"] != "GET"){
                 return;
             }
@@ -73,8 +73,12 @@
 
             if($action == null && "/" . implode("/", $routeParts) == $uri){
 
-                $_SESSION["LATEST_GET_URI"] = $uri;
-                
+                setSessionValue("LATEST_GET_URI", getSessionValue("CURRENT_GET_URI"));
+
+                setSessionValue("CURRENT_GET_URI", $uri);
+
+                Route::resetInvalidInput();
+
                 $callable($arguments);
 
                 exit();
@@ -83,7 +87,11 @@
 
             if("/" . implode("/", $routeParts) == $uri){
 
-               $_SESSION["LATEST_GET_URI"] = $uri;
+               setSessionValue("LATEST_GET_URI", getSessionValue("CURRENT_GET_URI"));
+
+               setSessionValue("CURRENT_GET_URI", $uri);
+
+               Route::resetInvalidInput();
 
                $controller = new $callable();
 
@@ -110,6 +118,7 @@
             }
 
             $uri = $_SERVER["REQUEST_URI"];
+
 
             if($action == null && $route == $uri){
 
@@ -140,13 +149,23 @@
          * @param function $callable: function with Route::get and Route:post 
          * for coresponding access type
          */
-        public static function group($accessType, $callable){
+        public static function group($accessType, $callable, $isNot=false){
 
             $middleWare = new Middleware();
 
-            $middleWare->middleware($accessType);
+            if($isNot){
+                if(!$middleWare->middleware($accessType)){
+                    $callable();
+                }
+            }
+            else{
+                if($middleWare->middleware($accessType)){
+                    $callable();
+                }
+            }
+            
 
-            $callable();
+
 
         }
 
@@ -204,11 +223,21 @@
          * Checks if CSRF tokens match
          */
         private static function checkCSRFToken(){
-            if(getSessionValue("CSRFToken") == $_POST["CSRFToken"]){
+
+            $bodyData = json_decode(file_get_contents("php://input"), true);
+            
+            if((getSessionValue("CSRFToken") == $_POST["CSRFToken"]) || (getSessionValue("CSRFToken") == $bodyData["CSRFToken"])){
                 return;
             }else{
                 redirect('/');
                 exit();
+            }
+        }
+
+        private static function resetInvalidInput(){
+            if(getSessionValue("VALIDATION_FAILS") != null && getSessionValue("LATEST_GET_URI") != getSessionValue("CURRENT_GET_URI"))
+            {
+                setSessionValue("VALIDATION_FAILS", null);
             }
         }
 

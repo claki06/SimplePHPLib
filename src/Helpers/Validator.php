@@ -29,6 +29,26 @@
 
             switch($condition){
 
+
+                case "username": {
+
+                    if(preg_match('/^[^<> ]+$/', $data) == 1){
+                        $this->validatedData[$key] = $data;
+                        break;
+                    }
+                    else{
+                        if($this->errorMessages[$key] == null){
+                            $this->errorMessages[$key] = array();
+                            array_push($this->errorMessages[$key], "Username cannot contain '<', '>' and space");
+                            break;
+                        }
+                        else{
+                            array_push($this->errorMessages[$key], "Username cannot contain '<', '>' and space");
+                            break;
+                        }      
+                    }
+                    
+                }
                 case preg_match("/^min(.*)$/", $condition) == 1:
                     
                     $numberOfChars = substr( $condition ,strpos($condition, ":") + 1);
@@ -37,8 +57,15 @@
                     }
 
                     if(strlen($data) < $numberOfChars){
-                        $this->errorMessages[$key] = "Minimum number of charcters is " . $numberOfChars;
-                        break;
+                        if($this->errorMessages[$key] == null){
+                            $this->errorMessages[$key] = array();
+                            array_push($this->errorMessages[$key], "Minimum number of charcters is " . $numberOfChars);
+                            break;
+                        }
+                        else{
+                            array_push($this->errorMessages[$key], "Minimum number of charcters is " . $numberOfChars);
+                            break;
+                        }      
                     }else{
                         $this->validatedData[$key] = $data;
                         break;
@@ -53,8 +80,15 @@
                     }
 
                     if(strlen($data) > $numberOfChars){
-                        $this->errorMessages[$key] = "Maximum number of charcters is " . $numberOfChars;
-                        break;
+                        if($this->errorMessages[$key] == null){
+                            $this->errorMessages[$key] = array();
+                            array_push($this->errorMessages[$key],  "Maximum number of charcters is " . $numberOfChars);
+                            break;
+                        }
+                        else{
+                            array_push($this->errorMessages[$key],  "Maximum number of charcters is " . $numberOfChars);
+                            break;
+                        }      
                     }else{
                         $this->validatedData[$key] = $data;
                         break;
@@ -64,16 +98,31 @@
                     if(filter_var($data, FILTER_VALIDATE_EMAIL)){
                         $this->validatedData[$key] = $data;
                     }else{
-                        $this->errorMessages[$key] = "Invalid email address";
-                        break;
+                        if($this->errorMessages[$key] == null){
+                            $this->errorMessages[$key] = array();
+                            array_push($this->errorMessages[$key], "Invalid email address");
+                            break;
+                        }
+                        else{
+                            array_push($this->errorMessages[$key], "Invalid email address");
+                            break;
+                        }      
                     }
                 case 'notEmpty':
                     if(strlen($data) == 0){
-                        $this->errorMessages[$key] = "Field must not be empty";
+                        if($this->errorMessages[$key] == null){
+                            $this->errorMessages[$key] = array();
+                            array_push($this->errorMessages[$key], "Field must not be empty");
+                            break;
+                        }
+                        else{
+                            array_push($this->errorMessages[$key], "Field must not be empty");
+                            break;
+                        }      
                     }
                     else{
                         $this->validatedData[$key] = $data;
-                    }
+                    }                    
 
             }
 
@@ -113,13 +162,11 @@
 
                 if($url == null){
                     
-                    redirect($_SESSION["LATEST_GET_URI"]);
+                    redirect($_SESSION["CURRENT_GET_URI"]);
 
-                    exit();
                 }
                 else{
                     redirect($url);
-                    exit();
                 }
 
             }
@@ -135,6 +182,12 @@
 
             return $this->validatedData;
 
+        }
+
+        public static function setValidationFails($key, $dataArr){
+            $_SESSION["VALIDATION_FAILS"] = array(
+                $key => $dataArr
+            );
         }
 
     }

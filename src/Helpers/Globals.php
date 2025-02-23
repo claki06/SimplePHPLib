@@ -5,9 +5,7 @@
     use Framework\Helpers\Linker;
     use Framework\Routing\Route;
 
-
     session_start();
-
 
     /**
      * Loads page from /app/Pages/x.page
@@ -15,6 +13,8 @@
      * @param assoc[var] $data: assoc array of variables available inside page
      */
     function view($page, $data = null){
+
+        header("Content-Type: text/html");
 
         if($data != null){
             extract($data);
@@ -29,10 +29,13 @@
         if(file_exists($pagePath)){
 
             $page = $linker->link(file_get_contents($pagePath), $data, $page); 
-
-            $page = eval("?>" . $page . "<?php ");
+            
+            
+            $page = eval("?>" . $page);
 
         }
+
+        echo $page;
 
     }
 
@@ -43,6 +46,7 @@
      */
     function redirect($uri){
         header("Location: " . $uri);
+        exit;
     }
 
 
@@ -193,5 +197,14 @@
         return $_SESSION["LATEST_GET_URI"];
     }
 
+    function getBasePath(){
+
+        $filleController = new Files();
+        return $filleController->getBasePath();
+    }
+
+    function unsetSessionVariable($key){
+        unset($_SESSION[$key]);
+    }
 
 ?>
